@@ -1,8 +1,25 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Brain, Puzzle, HomeIcon, Trophy, Settings, Gem, Flame, ChevronRight } from "lucide-react"
+import { useEffect, useState } from "react"
+import { storage } from "@/lib/storage"
 
 export default function HomePage() {
+  const [highScores, setHighScores] = useState(storage.getHighScores())
+  const [settings, setSettings] = useState(storage.getSettings())
+  const [totalStars, setTotalStars] = useState(() => {
+    return highScores.reduce((total, score) => total + score.stars, 0)
+  })
+  const [streakDays, setStreakDays] = useState(3) // TODO: Implement streak system
+
+  useEffect(() => {
+    const scores = storage.getHighScores()
+    setHighScores(scores)
+    setTotalStars(scores.reduce((total, score) => total + score.stars, 0))
+  }, [])
+
   return (
     <main className="min-h-screen bg-[#1E1F25] text-white">
       {/* Top Bar */}
@@ -12,14 +29,14 @@ export default function HomePage() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 bg-[#2D2E3A] rounded-full px-3 py-1">
                 <Flame className="h-5 w-5 text-orange-500" />
-                <span className="text-sm font-medium">3</span>
+                <span className="text-sm font-medium">{streakDays}</span>
                 <span className="text-xs text-gray-400 ml-1">days</span>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1 bg-[#2D2E3A] rounded-full px-3 py-1">
                 <Gem className="h-4 w-4 text-[#2D9CDB]" />
-                <span className="text-sm font-medium">240</span>
+                <span className="text-sm font-medium">{totalStars * 10}</span>
               </div>
             </div>
           </div>
@@ -35,7 +52,7 @@ export default function HomePage() {
               <button
                 key={category}
                 className={`p-4 rounded-xl text-center transition-all ${
-                  index === 0 ? "bg-[#2D9CDB] text-white" : "bg-[#252731] text-gray-400 hover:bg-[#2D2E3A]"
+                  index === 0 ? "bg-[#2D9CDB] text-white" : "bg-[#252731] text-gray-400 hover:bg-[#2D2E3A]" // TODO: Active category state
                 }`}
               >
                 {category}
@@ -47,7 +64,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-medium">Section 1</h2>
             <div className="flex items-center gap-1 text-sm text-gray-400">
-              <span className="text-[#2D9CDB]">2</span>/3 completed
+              <span className="text-[#2D9CDB]">{highScores.filter(score => score.difficulty === '4x4').length}</span>/3 completed
             </div>
           </div>
 
@@ -66,9 +83,17 @@ export default function HomePage() {
                   <Puzzle className="h-8 w-8 text-white" />
                 </Link>
                 <div className="flex gap-1 mb-1">
-                  <div className="w-4 h-4 text-yellow-400">★</div>
-                  <div className="w-4 h-4 text-yellow-400">★</div>
-                  <div className="w-4 h-4 text-yellow-400">★</div>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className={`w-4 h-4 ${
+                      i < Math.max(...highScores
+                        .filter(score => score.difficulty === '4x4')
+                        .map(score => score.stars) || [0])
+                        ? "text-yellow-400"
+                        : "text-gray-600"
+                    }`}>
+                      ★
+                    </div>
+                  ))}
                 </div>
                 <span className="text-sm font-medium">Basic Sliding</span>
                 <span className="text-xs text-gray-400">Completed</span>
@@ -127,19 +152,24 @@ export default function HomePage() {
       <nav className="fixed bottom-0 left-0 right-0 bg-[#252731] border-t border-gray-800">
         <div className="container mx-auto px-4">
           <div className="flex justify-around py-4">
-            <Button variant="ghost" className="text-[#2D9CDB]">
-              <HomeIcon className="h-6 w-6" />
-            </Button>
-            <Button variant="ghost" className="text-gray-400 hover:text-[#2D9CDB]">
-              <Trophy className="h-6 w-6" />
-            </Button>
-            <Button variant="ghost" className="text-gray-400 hover:text-[#2D9CDB]">
-              <Settings className="h-6 w-6" />
-            </Button>
+            <Link href="/">
+              <Button variant="ghost" className="text-[#2D9CDB]">
+                <HomeIcon className="h-6 w-6" />
+              </Button>
+            </Link>
+            <Link href="/achievements">
+              <Button variant="ghost" className="text-gray-400 hover:text-[#2D9CDB]">
+                <Trophy className="h-6 w-6" />
+              </Button>
+            </Link>
+            <Link href="/settings">
+              <Button variant="ghost" className="text-gray-400 hover:text-[#2D9CDB]">
+                <Settings className="h-6 w-6" />
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
     </main>
   )
 }
-
